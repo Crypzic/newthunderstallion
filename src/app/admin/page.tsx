@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { coinHref } from "@/components/links";
 import { Empty, Modal, Spinner, StatusBadge, TokenAvatar } from "@/components/primitives";
 import { useTierLabel } from "@/components/tier-copy";
-import { chainShort } from "@/lib/config";
+import { chainShort, NETWORKS } from "@/lib/config";
 import { dateTime, money, shortAddr, timeLeft } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
+import { market } from "@/lib/market/client";
 import { getStore, isRunning, useAuth, type AdminUser, type Listing, type Order, type OrderAction, type Settings } from "@/lib/store";
-import type { Tier } from "@/lib/tiers";
+import { trendLevel, type Tier } from "@/lib/tiers";
 
 type Tab = "overview" | "listings" | "orders" | "pricing" | "users";
 type Data = { listings: Listing[]; orders: Order[]; tiers: Tier[]; settings: Settings; users: AdminUser[] };
@@ -58,7 +59,10 @@ export default function AdminPage() {
 
   return (
     <div className="container-x pt-8">
-      <h1 className="h-display text-3xl">{t.admin.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="h-display text-3xl">{t.admin.title}</h1>
+        {data && <AddTrendingButton tiers={data.tiers} reload={load} />}
+      </div>
       <div className="mt-5 flex gap-1 overflow-x-auto border-b border-line">
         {tabs.map(([id, label, badge]) => (
           <button key={id} onClick={() => setTab(id)}
@@ -226,7 +230,9 @@ function Orders({ rows, reload, compact }: { rows: Order[]; reload: () => Promis
                     <span className="block text-xs text-faint">{chainShort(o.chain)}{o.bannerUrl && <> · <a href={o.bannerUrl} target="_blank" rel="noopener noreferrer" className="underline">banner</a></>}</span>
                   </td>
                   <td className="py-3">@{o.username}</td>
-                  <td className="num py-3 text-right">{money(o.amountUsd)}<span className="block text-xs text-faint">{o.payToken} · {o.payNetwork}</span></td>
+                  <td className="num py-3 text-right">
+                    {o.payToken === "ADMIN" ? <span className="text-xs text-storm-2">{t.admin.byAdmin}</span> : <>{money(o.amountUsd)}<span className="block text-xs text-faint">{o.payToken} · {o.payNetwork}</span></>}
+                  </td>
                   <td className="py-3 pl-4">
                     <StatusBadge status={o.status} label={t.status[o.status]} />
                     {o.status === "active" && <span className="num block text-xs text-faint">{t.admin.ends}: {timeLeft(o.endsAt)}</span>}
@@ -336,5 +342,86 @@ function Users({ rows, me, reload }: { rows: AdminUser[]; me: string; reload: ()
         </div>
       ))}
     </div>
+  );
+}
+
+const TOKEN_CHAINS = [...NETWORKS.map((n) => ({ id: n.chainIds[0], label: n.label })), { id: "base", label: "Base" }];
+
+function AddTrendingButton({ tiers, reload }: { tiers: Tier[]; reload: () => Promise<void> }) {
+  const { t, fmt } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [chain, setChain] = useState("solana");
+  const [address, setAddress] = useState("");
+  const [tierCode, setTierCode] = useState("t3");
+  const [banner, setBanner] = useState("");
+  const [found, setFound] = useState<{ name: string; symbol: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const trendTiers = tiers.filter((x) => x.product === "trend").sort((a, b) => a.sort - b.sort);
+
+  useEffect(() => {
+    const a = address.trim();
+    if (a.length < 26) return;
+    let alive = true;
+    const h = setTimeout(() => {
+      market.coin(chain, a).then((c) => alive && setFound(c ? { name: c.name, symbol: c.symbol } : null)).catch(() => alive && setFound(null));
+    }, 400);
+    return () => { alive = false; clearTimeout(h); };
+  }, [chain, address]);
+
+  const submit = async () => {
+    setErr("");
+    if (address.trim().length < 26) return setErr(t.checkout.address);
+    setBusy(true);
+    try {
+      await getStore().admin.addTrending({
+        chain, address: address.trim(), tierCode, bannerUrl: banner.trim(),
+        tokenName: found?.name || "", tokenSymbol: found?.symbol || "",
+      });
+      await reload();
+      setOpen(false); setAddress(""); setBanner(""); setFound(null);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <button className="btn-primary" onClick={() => setOpen(true)}>+ {t.admin.addTrending}</button>
+      <Modal open={open} onClose={() => setOpen(false)} title={t.admin.addTrending}>
+        <p className="mb-4 text-sm text-muted">{t.admin.addTrendingHint}</p>
+        <div className="flex flex-col gap-4">
+          <div>
+            <span className="label">{t.checkout.chain}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {TOKEN_CHAINS.map((c) => <button key={c.id} className={`chip ${chain === c.id ? "chip-on" : ""}`} onClick={() => setChain(c.id)}>{c.label}</button>)}
+            </div>
+          </div>
+          <label className="block">
+            <span className="label">{t.checkout.address}</span>
+            <input className="input num" value={address} onChange={(e) => { setAddress(e.target.value); setFound(null); }} spellCheck={false} />
+            {found && <span className="mt-1.5 block text-xs text-up">{fmt(t.checkout.found, found)}</span>}
+          </label>
+          <div>
+            <span className="label">{t.admin.tier}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {trendTiers.map((x) => (
+                <button key={x.code} className={`chip ${tierCode === x.code ? "chip-on" : ""}`} onClick={() => setTierCode(x.code)}>
+                  {t.ads.tier} {trendLevel(x.code)} · ⚡{x.points.toLocaleString()} · {x.durationHours}h
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="block">
+            <span className="label">{t.checkout.bannerUrl.replace("{w}", "1500").replace("{h}", "500")}</span>
+            <input className="input" value={banner} onChange={(e) => setBanner(e.target.value)} placeholder="https://… (optional)" />
+          </label>
+          {err && <p className="text-sm text-down">{err}</p>}
+          <button className="btn-primary" onClick={submit} disabled={busy}>{busy ? t.common.loading : t.admin.add}</button>
+        </div>
+      </Modal>
+    </>
   );
 }

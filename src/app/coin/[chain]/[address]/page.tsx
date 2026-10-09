@@ -2,6 +2,9 @@ import { Suspense } from "react";
 import { Spinner } from "@/components/primitives";
 import { CoinView } from "./view";
 
+// Token pages render per request (the navbar reads the URL), so they may block.
+export const instant = false;
+
 export default function CoinPage({ params }: PageProps<"/coin/[chain]/[address]">) {
   return (
     <Suspense fallback={<Spinner />}>

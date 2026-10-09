@@ -1,6 +1,6 @@
 "use client";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { AUTH_EMAIL_DOMAIN, SUPABASE_ANON_KEY, SUPABASE_URL, type PayToken } from "../config";
+import { AUTH_EMAIL_DOMAIN, SUPABASE_ANON_KEY, SUPABASE_URL } from "../config";
 import type { Product, Tier } from "../tiers";
 import {
   StoreError,
@@ -28,7 +28,7 @@ const fromListing = (l: Partial<Listing>): Row => {
 };
 const toOrder = (r: Row): Order => ({
   id: r.id, userId: r.user_id, username: r.username, product: r.product as Product, tierCode: r.tier_code, chain: r.chain, address: r.address,
-  tokenName: r.token_name, tokenSymbol: r.token_symbol, bannerUrl: r.banner_url, linkUrl: r.link_url, payToken: r.pay_token as PayToken,
+  tokenName: r.token_name, tokenSymbol: r.token_symbol, bannerUrl: r.banner_url, linkUrl: r.link_url, payToken: r.pay_token as Order["payToken"],
   payNetwork: r.pay_network, amountUsd: Number(r.amount_usd), points: r.points, durationHours: r.duration_hours,
   status: r.status === "active" && r.ends_at && Date.parse(r.ends_at) <= Date.now() ? "expired" : r.status,
   txHash: r.tx_hash, createdAt: r.created_at, startsAt: r.starts_at, endsAt: r.ends_at,
@@ -157,6 +157,12 @@ export function createSupabaseStore(): Store {
       async updateListing(id, patch) { check(await sb.from("listings").update(fromListing(patch)).eq("id", id)); },
       async orders() { return check(await sb.from("orders").select("*").order("created_at", { ascending: false }).limit(1000)).map(toOrder); },
       async orderAction(id, action) { check(await sb.rpc("admin_order_action", { order_id: id, action })); },
+      async addTrending(input) {
+        check(await sb.rpc("admin_add_trending", {
+          p_chain: input.chain, p_address: input.address, p_tier: input.tierCode,
+          p_name: input.tokenName, p_symbol: input.tokenSymbol, p_banner: input.bannerUrl,
+        }));
+      },
       async updateTier(code, patch) {
         const row: Row = {};
         if (patch.priceUsd !== undefined) row.price_usd = patch.priceUsd;

@@ -7,13 +7,13 @@ Built with **Next.js 16 + React 19 + Tailwind 4**, data in **Supabase**, market 
 
 | Page | What it does |
 |---|---|
-| `/` **ThunderTrend** | Live trending board. Boosted tokens are pinned by Thunder Points; Tier 3+ names shimmer gold (Thunder Ticker); Tier 5 gets the glowing Thunder Elite frame and the front-page spotlight. Banner carousel, Top 10 Hot Spot (votes), newest listings. |
+| `/` **ThunderTrend** | Live trending board. Boosted tokens are pinned by Thunder Points; Tier 3+ names shimmer gold (Thunder Ticker); Tier 5 gets the glowing Thunder Elite frame and the front-page spotlight. **Live banner carousel** (paid banners → running boosts, including ones the admin adds → whatever is trending on DexScreener right now, refreshed every 30s). Top 10 Hot Spot (votes), newest listings. |
 | `/trenches` | Fresh launches, newest first. |
 | `/hottest` | Largest stablecoins ranked by 24h volume. |
 | `/advertising` | Thunder Advertising: **Thunder Profile** (Free / Elite $148), **Thunder Trend** Tiers 1–5, **Banner Ads** (1500×500, 24h / 3d / 7d). Checkout creates an order. |
 | `/coin/[chain]/[address]` | Token page: chart, stats, links, votes. Elite Profiles get a banner, gold frame and every social link. |
 | `/submit`, `/dashboard` | Free listing submission; a user's own listings and orders. |
-| `/admin` | Overview (revenue, pending work), listing review (approve / reject / feature / add votes / edit), orders (mark paid & activate, extend, end), **pricing editor** (prices, "was" prices, points, durations, sale toggle), users (grant admin). |
+| `/admin` | Overview (revenue, pending work), listing review (approve / reject / feature / add votes / edit), orders (mark paid & activate, extend, end), **Add trending** (put any token on the board + carousel for free, instantly), **pricing editor** (prices, "was" prices, points, durations, sale toggle), users (grant admin). |
 
 ### Placeholders (on purpose, for now)
 

@@ -79,7 +79,7 @@ export default function DashboardPage() {
                   <li key={o.id} className="flex flex-wrap items-center gap-3 border-b border-line/60 px-5 py-3 last:border-0">
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold">{label({ code: o.tierCode, product: o.product })}</p>
-                      <p className="num text-xs text-faint">{o.id} · {o.tokenSymbol || o.address.slice(0, 10)} · {money(o.amountUsd)} {o.payToken}</p>
+                      <p className="num text-xs text-faint">{o.id} · {o.tokenSymbol || o.address.slice(0, 10)} · {o.payToken === "ADMIN" ? t.admin.byAdmin : `${money(o.amountUsd)} ${o.payToken}`}</p>
                     </div>
                     {o.status === "active" && <span className="num text-xs text-muted">{t.admin.ends}: {timeLeft(o.endsAt)}</span>}
                     <StatusBadge status={o.status} label={t.status[o.status]} />

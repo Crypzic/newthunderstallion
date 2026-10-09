@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/unbounded";
 import "@fontsource-variable/jetbrains-mono";
@@ -25,10 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AuthProvider>
             <UiProvider>
               <DemoNotice />
-              {/* Navbar reads the pathname, which is request-time data on dynamic routes */}
-              <Suspense fallback={<div className="h-16 border-b border-line" />}>
-                <Navbar />
-              </Suspense>
+              <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />
               <WalletDialog />

@@ -127,6 +127,9 @@ create table if not exists public.orders (
   starts_at timestamptz,
   ends_at timestamptz
 );
+-- ADMIN marks boosts an admin added for free from the panel.
+alter table public.orders drop constraint if exists orders_pay_token_check;
+alter table public.orders add constraint orders_pay_token_check check (pay_token in ('USDC', 'USDT', 'SOL', 'BNB', 'ETH', 'ADMIN'));
 create index if not exists orders_running on public.orders (status, ends_at);
 create index if not exists orders_user on public.orders (user_id, created_at desc);
 
@@ -138,6 +141,7 @@ begin
   if auth.uid() is not null and not public.is_admin() then
     select * into t from public.tiers where code = new.tier_code and product = new.product and active;
     if not found then raise exception 'Unknown package %', new.tier_code; end if;
+    if new.pay_token = 'ADMIN' then raise exception 'Invalid payment token'; end if;
     new.user_id := auth.uid();
     new.username := coalesce((select username from public.profiles where id = auth.uid()), '');
     new.amount_usd := t.price_usd;
@@ -181,6 +185,24 @@ begin
   else
     raise exception 'Unknown action %', action;
   end if;
+end $$;
+
+-- Admin "Add trending": a free boost that starts immediately, priced from the tiers table.
+create or replace function public.admin_add_trending(p_chain text, p_address text, p_tier text, p_name text, p_symbol text, p_banner text)
+returns text
+language plpgsql security definer set search_path = public as $$
+declare t public.tiers; new_id text;
+begin
+  if not public.is_admin() then raise exception 'forbidden'; end if;
+  select * into t from public.tiers where code = p_tier and product = 'trend';
+  if not found then raise exception 'Unknown tier %', p_tier; end if;
+  insert into public.orders (user_id, username, product, tier_code, chain, address, token_name, token_symbol, banner_url,
+                             pay_token, pay_network, amount_usd, points, duration_hours, status, starts_at, ends_at)
+  values (auth.uid(), coalesce((select username from public.profiles where id = auth.uid()), ''), 'trend', t.code, p_chain, p_address,
+          coalesce(p_name, ''), coalesce(p_symbol, ''), coalesce(p_banner, ''), 'ADMIN', 'admin', 0, t.points, t.duration_hours, 'active', now(),
+          case when t.duration_hours is null then null else now() + make_interval(hours => t.duration_hours) end)
+  returning id into new_id;
+  return new_id;
 end $$;
 
 -- ───────────────────────────── Votes ─────────────────────────────
@@ -313,4 +335,4 @@ create policy "place orders" on public.orders for insert to authenticated with c
 
 grant select on public.active_boosts to anon, authenticated;
 grant execute on function public.cast_vote, public.vote_status, public.hot_spot, public.username_available to anon, authenticated;
-grant execute on function public.admin_order_action, public.admin_users to authenticated;
+grant execute on function public.admin_order_action, public.admin_users, public.admin_add_trending to authenticated;

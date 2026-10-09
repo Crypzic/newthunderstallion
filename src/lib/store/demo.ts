@@ -12,7 +12,7 @@ import {
 
 type User = { userId: string; username: string; telegram: string; isAdmin: boolean; passHash: string; createdAt: string };
 type Vote = { key: string; chain: string; address: string; name: string; symbol: string; voter: string };
-type DB = { v: 1; users: User[]; listings: Listing[]; orders: Order[]; votes: Vote[]; tiers: Tier[]; settings: Settings; seq: { listing: number; order: number } };
+type DB = { v: 2; users: User[]; listings: Listing[]; orders: Order[]; votes: Vote[]; tiers: Tier[]; settings: Settings; seq: { listing: number; order: number } };
 
 const KEY = "ts-demo-db";
 const SESSION_KEY = "ts-demo-session";
@@ -39,27 +39,25 @@ function seed(): DB {
     };
   };
   return {
-    v: 1,
+    v: 2,
     users: [],
     listings: [
-      listing(1, "Ansem", "ANSEM", "solana", "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump", { featured: true, adminVotes: 120, bannerUrl: "/promos/sol-9crcn9rgt8v2imem2baks13yhmeais3rum3rpvtgpump.jpg" }),
+      listing(1, "Ansem", "ANSEM", "solana", "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump", { featured: true, adminVotes: 120 }),
       listing(2, "Ark", "ARK", "bsc", "0xCae117ca6Bc8A341D2E7207F30E180f0e5618B9D", { adminVotes: 64 }),
       listing(3, "Cate", "CATE", "solana", "Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump", { adminVotes: 41 }),
       listing(4, "Jimothy", "JIMOTHY", "solana", "Ge87EtsjwRQbHaqQmKRno69RFTwh9bfSsm99XNxTpump", { adminVotes: 18 }),
       listing(5, "Pipe Dog", "PIPEDOG", "bsc", "0x5Cb6F181081301b44905F3ae15419112ecaBd8A6", { adminVotes: 9 }),
     ],
     orders: [
-      order(1, "t5", "trend", "solana", "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump", "Ansem", "ANSEM", 3, "/promos/sol-9crcn9rgt8v2imem2baks13yhmeais3rum3rpvtgpump.jpg"),
+      order(1, "t5", "trend", "solana", "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump", "Ansem", "ANSEM", 3),
       order(2, "t3", "trend", "bsc", "0xCae117ca6Bc8A341D2E7207F30E180f0e5618B9D", "Ark", "ARK", 2),
       order(3, "t1", "trend", "solana", "Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump", "Cate", "CATE", 1),
-      order(4, "b2", "banner", "solana", "Ge87EtsjwRQbHaqQmKRno69RFTwh9bfSsm99XNxTpump", "Jimothy", "JIMOTHY", 5, "/promos/sol-ge87etsjwrqbhaqqmkrno69rftwh9bfssm99xnxtpump.jpg"),
-      order(5, "b1", "banner", "bsc", "0x2076CD26D8Cf26f91655d4Ada3dD2fdBFdd8e7a4", "Apes", "APES", 2, "/promos/robinhood-0x2076cd26d8cf26f91655d4ada3dd2fdbfdd8e7a4.jpg"),
-      order(6, "elite", "profile", "solana", "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump", "Ansem", "ANSEM", 30),
+      order(4, "elite", "profile", "solana", "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump", "Ansem", "ANSEM", 30),
     ],
     votes: [],
     tiers: DEFAULT_TIERS.map((t) => ({ ...t })),
     settings: { saleActive: true },
-    seq: { listing: 5, order: 6 },
+    seq: { listing: 5, order: 4 },
   };
 }
 
@@ -68,7 +66,7 @@ function load(): DB {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const db = JSON.parse(raw) as DB;
-      if (db.v === 1) return db;
+      if (db.v === 2) return db;
     }
   } catch {}
   const db = seed();
@@ -251,6 +249,21 @@ export function createDemoStore(): Store {
           } else if (action === "end") {
             o.status = "expired"; o.endsAt = iso(now);
           }
+        });
+      },
+      async addTrending(input) {
+        const admin = requireAdmin();
+        mutate((db) => {
+          const tier = db.tiers.find((t) => t.code === input.tierCode && t.product === "trend");
+          if (!tier) throw new StoreError("BAD_INPUT", "Unknown tier");
+          const now = Date.now();
+          db.seq.order += 1;
+          db.orders.push({
+            ...input, id: `ORD-${String(db.seq.order).padStart(6, "0")}`, userId: admin.userId, username: admin.username,
+            product: "trend", linkUrl: "", payToken: "ADMIN", payNetwork: "admin", amountUsd: 0, points: tier.points,
+            durationHours: tier.durationHours, status: "active", txHash: "", createdAt: iso(now), startsAt: iso(now),
+            endsAt: tier.durationHours ? iso(now + tier.durationHours * HOUR) : null,
+          });
         });
       },
       async updateTier(code, patch) { requireAdmin(); mutate((db) => { const t = db.tiers.find((x) => x.code === code); if (t) Object.assign(t, patch); }); },

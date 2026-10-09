@@ -47,7 +47,7 @@ export type Order = {
   tokenSymbol: string;
   bannerUrl: string;
   linkUrl: string;
-  payToken: PayToken;
+  payToken: PayToken | "ADMIN"; // ADMIN = added free by an admin from the panel
   payNetwork: string;
   amountUsd: number;
   points: number;
@@ -59,7 +59,9 @@ export type Order = {
   endsAt: string | null;
 };
 
-export type OrderInput = Pick<Order, "product" | "tierCode" | "chain" | "address" | "tokenName" | "tokenSymbol" | "bannerUrl" | "linkUrl" | "payToken" | "payNetwork">;
+export type OrderInput = Pick<Order, "product" | "tierCode" | "chain" | "address" | "tokenName" | "tokenSymbol" | "bannerUrl" | "linkUrl" | "payNetwork"> & { payToken: PayToken };
+
+export type TrendingInput = Pick<Order, "tierCode" | "chain" | "address" | "tokenName" | "tokenSymbol" | "bannerUrl">;
 
 /** Public, safe-to-show view of a running order. */
 export type ActiveBoost = {
@@ -112,6 +114,8 @@ export interface Store {
     updateListing(id: string, patch: Partial<Pick<Listing, "status" | "rejectedReason" | "featured" | "adminVotes" | keyof ListingInput>>): Promise<void>;
     orders(): Promise<Order[]>;
     orderAction(id: string, action: OrderAction): Promise<void>;
+    /** Put a token on the board right away, free of charge. */
+    addTrending(input: TrendingInput): Promise<void>;
     updateTier(code: string, patch: Partial<Pick<Tier, "priceUsd" | "compareAtUsd" | "points" | "durationHours" | "active">>): Promise<void>;
     setSettings(s: Settings): Promise<void>;
     users(): Promise<AdminUser[]>;

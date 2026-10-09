@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter, useSelectedLayoutSegment } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEMO_MODE, NETWORKS, SITE, type NetworkId } from "@/lib/config";
@@ -11,7 +11,7 @@ import type { Coin } from "@/lib/market/types";
 import { getStore, useAuth } from "@/lib/store";
 import { price } from "@/lib/format";
 import { coinHref } from "./links";
-import { Bolt, Close, Coins, Crosshair, Megaphone, Menu, Plus, Search, Shield, Telegram, User, Wallet, XLogo } from "./icons";
+import { Bolt, Close, Coins, Crosshair, Megaphone, Menu, Plus, Search, Shield, Telegram, User, Wallet } from "./icons";
 import { ChainBadge, Modal, Pct, TokenAvatar } from "./primitives";
 import { useUi } from "./ui-state";
 
@@ -122,14 +122,16 @@ function AccountButton({ compact }: { compact?: boolean }) {
 export function Navbar() {
   const { t } = useI18n();
   const nav = useNav();
-  const path = usePathname();
+  // Only the first URL segment is needed, and it is static even on dynamic routes,
+  // so the navbar can render in the prerendered shell without a Suspense boundary.
+  const segment = useSelectedLayoutSegment();
   const { open } = useUi();
   const [drawer, setDrawer] = useState(false);
-  const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const isActive = (href: string) => (href === "/" ? segment === null : segment === href.slice(1));
 
   // Close the drawer when the route changes (it lives outside the page tree).
-  const [lastPath, setLastPath] = useState(path);
-  if (lastPath !== path) { setLastPath(path); setDrawer(false); }
+  const [lastSegment, setLastSegment] = useState(segment);
+  if (lastSegment !== segment) { setLastSegment(segment); setDrawer(false); }
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-md">
@@ -203,7 +205,7 @@ function CommunityLinks() {
       <div className="flex flex-wrap gap-2">
         {SITE.community.map((c) => (
           <a key={c.href} href={c.href} target="_blank" rel="noopener noreferrer" className="chip">
-            {c.kind === "x" ? <XLogo size={12} /> : c.kind === "tg" ? <Telegram size={12} /> : null} {c.label}
+            {c.kind === "tg" ? <Telegram size={12} /> : null} {c.label}
           </a>
         ))}
       </div>

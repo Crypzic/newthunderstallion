@@ -8,8 +8,6 @@ export const SITE = {
   adminTelegramUrl: process.env.NEXT_PUBLIC_ADMIN_TELEGRAM_URL || "https://t.me/Stallion_CEO",
   reviewTime: "48h",
   community: [
-    { label: "Stallion X Listing", href: "https://x.com/stallion_ceo", kind: "x" },
-    { label: "Stallion X Official", href: "https://x.com/stallion_cn", kind: "x" },
     { label: "Telegram KOLs", href: "https://t.me/STALLION_KOLS", kind: "tg" },
     { label: "Stallion Trend Bot", href: "https://t.me/StallionTrendBot", kind: "tg" },
     { label: "Linktree", href: "https://linktr.ee/Stallion_CE", kind: "link" },
