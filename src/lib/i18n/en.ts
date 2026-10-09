@@ -18,6 +18,9 @@ export const en = {
     community: "Community",
     menu: "Menu",
     search: "Search token, symbol or contract…",
+    searchTrending: "Trending now",
+    searchResults: "results",
+    searchHint: "Search any token on any chain by name, symbol, pair or contract address. ↑↓ to move, Enter to open.",
   },
   common: {
     all: "All",

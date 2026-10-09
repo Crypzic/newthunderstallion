@@ -18,6 +18,9 @@ export const zh: Dict = {
     community: "社区",
     menu: "菜单",
     search: "搜索代币名称、符号或合约…",
+    searchTrending: "当前热门",
+    searchResults: "条结果",
+    searchHint: "按名称、符号、交易对或合约地址搜索任意链上的代币。↑↓ 选择，回车打开。",
   },
   common: {
     all: "全部",

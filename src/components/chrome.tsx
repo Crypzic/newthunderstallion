@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { market } from "@/lib/market/client";
 import type { Coin } from "@/lib/market/types";
 import { getStore, useAuth } from "@/lib/store";
-import { price } from "@/lib/format";
+import { age, price, usd } from "@/lib/format";
 import { coinHref } from "./links";
 import { Bolt, Close, Coins, Crosshair, Megaphone, Menu, Plus, Search, Shield, Telegram, User, Wallet } from "./icons";
 import { ChainBadge, Modal, Pct, TokenAvatar } from "./primitives";
@@ -135,7 +135,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-md">
-      <div className="container-x flex h-16 items-center gap-4">
+      <div className="container-x flex h-16 items-center gap-3">
         <Logo />
         <nav className="ml-2 hidden items-center gap-0.5 lg:flex">
           {nav.map((n) => (
@@ -148,13 +148,20 @@ export function Navbar() {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <button className="btn-ghost hidden w-56 justify-start text-muted 2xl:flex" onClick={() => open("search")}>
-            <Search size={16} /> <span className="truncate text-xs font-medium">{t.nav.search}</span>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          <button
+            className="hidden h-10 min-w-[150px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-line-2 bg-bg-2 px-3 text-left text-muted transition-colors hover:border-volt/50 lg:flex"
+            onClick={() => open("search")}
+          >
+            <Search size={16} className="shrink-0" />
+            <span className="truncate text-xs font-medium">{t.nav.search}</span>
+            <kbd className="num ml-auto hidden rounded border border-line-2 px-1.5 text-[10px] text-faint xl:inline">/</kbd>
           </button>
-          <button className="btn-ghost p-2.5 2xl:hidden" onClick={() => open("search")} aria-label={t.nav.search}><Search size={16} /></button>
+          <button className="btn-ghost p-2.5 lg:hidden" onClick={() => open("search")} aria-label={t.nav.search}><Search size={16} /></button>
           <div className="hidden sm:block"><LangToggle /></div>
-          <button className="btn-ghost hidden whitespace-nowrap sm:flex" onClick={() => open("wallet")}><Wallet size={16} /> {t.nav.connect}</button>
+          <button className="btn-ghost hidden whitespace-nowrap sm:flex" onClick={() => open("wallet")} aria-label={t.nav.connect}>
+            <Wallet size={16} /> <span className="sm:inline lg:hidden xl:inline">{t.nav.connect}</span>
+          </button>
           <div className="hidden sm:block"><AccountButton /></div>
           <button className="btn-ghost p-2.5 lg:hidden" onClick={() => setDrawer(true)} aria-label={t.nav.menu}><Menu size={18} /></button>
         </div>
@@ -284,16 +291,30 @@ export function SearchDialog() {
   const { dialog, close } = useUi();
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<Coin[]>([]);
+  const [trending, setTrending] = useState<Coin[]>([]);
   const [busy, setBusy] = useState(false);
+  const [sel, setSel] = useState(0);
   const router = useRouter();
+  const isOpen = dialog === "search";
 
+  // ⌘K / Ctrl+K or "/" opens search from anywhere (except while typing in a field).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); document.dispatchEvent(new CustomEvent("ts:open-search")); }
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement)?.tagName || "");
+      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing)) {
+        e.preventDefault();
+        document.dispatchEvent(new CustomEvent("ts:open-search"));
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  // Before anything is typed, suggest what's trending right now.
+  useEffect(() => {
+    if (!isOpen || trending.length) return;
+    market.trending().then((r) => setTrending(r.slice(0, 8))).catch(() => {});
+  }, [isOpen, trending.length]);
 
   useEffect(() => {
     if (q.trim().length < 2) return;
@@ -304,26 +325,44 @@ export function SearchDialog() {
     }, 250);
     return () => { alive = false; clearTimeout(h); };
   }, [q]);
-  const shown = q.trim().length < 2 ? [] : rows;
+
+  const searching = q.trim().length >= 2;
+  const shown = searching ? rows : trending;
+  const go = (c: Coin) => { close(); setQ(""); router.push(coinHref(c.chainId, c.address)); };
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(s + 1, shown.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(s - 1, 0)); }
+    else if (e.key === "Enter" && shown[sel]) { e.preventDefault(); go(shown[sel]); }
+  };
 
   return (
-    <Modal open={dialog === "search"} onClose={close} title={t.nav.search.replace("…", "")}>
-      <div className="relative mb-3">
+    <Modal open={isOpen} onClose={close} title={t.nav.search.replace("…", "")} wide>
+      <div className="relative mb-2">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-        <input autoFocus className="input pl-9" placeholder={t.nav.search} value={q} onChange={(e) => setQ(e.target.value)} />
+        <input autoFocus className="input py-3 pl-9 text-base" placeholder={t.nav.search} value={q}
+          onChange={(e) => { setQ(e.target.value); setSel(0); }} onKeyDown={onKey} spellCheck={false} autoComplete="off" />
       </div>
-      {busy && <p className="py-2 text-xs text-muted">{t.common.loading}</p>}
+      <p className="eyebrow mb-1 mt-3 flex items-center gap-2">
+        {searching ? (busy ? t.common.loading : `${rows.length} ${t.nav.searchResults}`) : <><Bolt size={12} className="text-volt" /> {t.nav.searchTrending}</>}
+      </p>
       <ul className="flex flex-col">
-        {shown.map((c) => (
+        {shown.map((c, i) => (
           <li key={`${c.chainId}:${c.address}`}>
             <button
-              className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left hover:bg-panel-2"
-              onClick={() => { close(); router.push(coinHref(c.chainId, c.address)); }}
+              className={`flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left ${i === sel ? "bg-panel-2" : "hover:bg-panel-2"}`}
+              onMouseEnter={() => setSel(i)}
+              onClick={() => go(c)}
             >
               <TokenAvatar src={c.image} symbol={c.symbol} chain={c.chainId} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{c.symbol} <span className="font-normal text-muted">{c.name}</span></span>
-                <span className="mt-0.5 flex items-center gap-2"><ChainBadge chain={c.chainId} /></span>
+                <span className="block truncate text-sm font-semibold">{c.symbol} <span className="font-normal text-faint">/{c.quoteSymbol}</span> <span className="font-normal text-muted">{c.name}</span></span>
+                <span className="num mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-faint">
+                  <ChainBadge chain={c.chainId} />
+                  <span>{t.board.liquidity} {usd(c.liquidity)}</span>
+                  <span className="hidden sm:inline">{t.board.volume} {usd(c.volume.h24)}</span>
+                  <span className="hidden sm:inline">{t.board.mcap} {usd(c.marketCap)}</span>
+                  <span>{age(c.createdAt)}</span>
+                </span>
               </span>
               <span className="text-right">
                 <span className="num block text-sm">{price(c.priceUsd)}</span>
@@ -333,7 +372,8 @@ export function SearchDialog() {
           </li>
         ))}
       </ul>
-      {!busy && q.trim().length >= 2 && shown.length === 0 && <p className="py-4 text-center text-sm text-muted">{t.common.noResults}</p>}
+      {searching && !busy && rows.length === 0 && <p className="py-4 text-center text-sm text-muted">{t.common.noResults}</p>}
+      <p className="mt-3 text-center text-[11px] text-faint">{t.nav.searchHint}</p>
     </Modal>
   );
 }
