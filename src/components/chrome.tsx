@@ -28,8 +28,8 @@ function useNav() {
 
 export function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2.5" aria-label={SITE.name}>
-      <Image src="/brand/logo-64.png" alt="" width={32} height={32} className="rounded-lg" priority />
+    <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap" aria-label={SITE.name}>
+      <Image src="/brand/logo-64.png" alt="" width={36} height={36} className="rounded-xl ring-1 ring-volt/40 shadow-[0_0_18px_rgb(255_210_63/0.35)]" priority />
       <span className="h-display text-[15px] leading-none">
         THUNDER<span className="text-volt">STALLION</span>
       </span>
@@ -134,23 +134,24 @@ export function Navbar() {
   if (lastSegment !== segment) { setLastSegment(segment); setDrawer(false); }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-md">
+      <span className="nav-glow" aria-hidden />
       <div className="container-x flex h-16 items-center gap-3">
         <Logo />
-        <nav className="ml-2 hidden items-center gap-0.5 lg:flex">
+        <nav className="ml-2 hidden items-center gap-0.5 xl:flex">
           {nav.map((n) => (
             <Link
               key={n.href}
               href={n.href}
               className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors ${isActive(n.href) ? "bg-panel-2 text-volt" : "text-muted hover:text-text"}`}
             >
-              <n.icon size={16} /> {n.label}
+              <n.icon size={16} className="hidden 2xl:block" /> {n.label}
             </Link>
           ))}
         </nav>
         <div className="ml-auto flex min-w-0 items-center gap-2">
           <button
-            className="hidden h-10 min-w-[150px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-line-2 bg-bg-2 px-3 text-left text-muted transition-colors hover:border-volt/50 lg:flex"
+            className="hidden h-10 min-w-[130px] max-w-[300px] flex-1 items-center gap-2 rounded-xl border border-line-2 bg-bg-2 px-3 text-left text-muted transition-colors hover:border-volt/50 lg:flex"
             onClick={() => open("search")}
           >
             <Search size={16} className="shrink-0" />
@@ -160,15 +161,15 @@ export function Navbar() {
           <button className="btn-ghost p-2.5 lg:hidden" onClick={() => open("search")} aria-label={t.nav.search}><Search size={16} /></button>
           <div className="hidden sm:block"><LangToggle /></div>
           <button className="btn-ghost hidden whitespace-nowrap sm:flex" onClick={() => open("wallet")} aria-label={t.nav.connect}>
-            <Wallet size={16} /> <span className="sm:inline lg:hidden xl:inline">{t.nav.connect}</span>
+            <Wallet size={16} /> <span className="sm:inline lg:hidden 2xl:inline">{t.nav.connect}</span>
           </button>
           <div className="hidden sm:block"><AccountButton /></div>
-          <button className="btn-ghost p-2.5 lg:hidden" onClick={() => setDrawer(true)} aria-label={t.nav.menu}><Menu size={18} /></button>
+          <button className="btn-ghost p-2.5 xl:hidden" onClick={() => setDrawer(true)} aria-label={t.nav.menu}><Menu size={18} /></button>
         </div>
       </div>
 
       {drawer && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/70 lg:hidden" onClick={() => setDrawer(false)}>
+        <div className="fixed inset-0 z-50 bg-black/70 xl:hidden" onClick={() => setDrawer(false)}>
           <aside className="absolute right-0 top-0 flex h-full w-[86%] max-w-sm flex-col gap-6 overflow-y-auto border-l border-line bg-bg-2 p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <Logo />

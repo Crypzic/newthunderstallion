@@ -64,7 +64,7 @@ export function MarketBoard({ source, title, subtitle, limit = 60 }: { source: "
   ];
 
   return (
-    <section className="card overflow-hidden">
+    <section className="reveal card overflow-hidden">
       <div className="flex flex-col gap-4 border-b border-line p-4 sm:p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -133,7 +133,7 @@ function BoardRow({ row, rank, win }: { row: Row; rank: number; win: Window }) {
   const lvl = boost?.level || 0;
   const href = coinHref(c.chainId, c.address);
   return (
-    <tr className={`group relative border-b border-line/60 transition-colors last:border-0 hover:bg-panel-2/70 ${hasEliteFrame(lvl) ? "elite-frame" : ""}`}>
+    <tr className={`group relative border-b border-line/60 transition-colors last:border-0 hover:bg-panel-2/70 hover:shadow-[inset_3px_0_0_var(--color-volt)] ${hasEliteFrame(lvl) ? "elite-frame" : ""}`}>
       <td className="num py-3 pl-4 text-xs text-faint">{rank}</td>
       <td className="py-3 pr-3">
         <Link href={href} className="flex min-w-0 items-center gap-3 after:absolute after:inset-0">

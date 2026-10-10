@@ -12,7 +12,7 @@ export default function HottestPage() {
   const totalVol = rows.reduce((n, r) => n + r.volume24, 0) || 1;
   return (
     <div className="container-x pt-8">
-      <section className="card overflow-hidden">
+      <section className="reveal card overflow-hidden">
         <div className="border-b border-line p-4 sm:p-5">
           <h1 className="h-display flex items-center gap-2 text-xl"><Coins size={20} className="text-storm-2" /> {t.hottest.title}</h1>
           <p className="mt-1 text-sm text-muted">{t.hottest.subtitle}</p>

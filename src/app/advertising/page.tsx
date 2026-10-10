@@ -44,7 +44,7 @@ export default function AdvertisingPage() {
             { id: "trend", n: "02", name: t.ads.trendName, tag: t.ads.trendTag, icon: Bolt },
             { id: "banner", n: "03", name: t.ads.bannerName, tag: t.ads.bannerTag, icon: Megaphone },
           ].map((a) => (
-            <a key={a.id} href={`#${a.id}`} className="card group p-5 transition-colors hover:border-volt/40">
+            <a key={a.id} href={`#${a.id}`} className="card lift group p-5">
               <p className="eyebrow">{t.ads.type} {a.n}</p>
               <p className="h-display mt-3 flex items-center justify-center gap-2 text-lg"><a.icon size={18} className="text-volt" /> {a.name}</p>
               <p className="mt-1 text-sm text-muted">{a.tag}</p>
@@ -65,7 +65,7 @@ export default function AdvertisingPage() {
         <h2 className="h-display text-center text-2xl">{t.ads.howItWorks}</h2>
         <ol className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
           {[t.ads.step1, t.ads.step2, t.ads.step3].map((s, i) => (
-            <li key={s} className="card p-5">
+            <li key={s} className="reveal card p-5">
               <span className="num text-sm font-bold text-volt">0{i + 1}</span>
               <p className="mt-2 text-sm">{s}</p>
             </li>
@@ -108,7 +108,7 @@ function ProfileSection({ tiers, onPick }: { tiers: Tier[]; onPick: (t: Tier) =>
     <section className="container-x mt-20">
       <SectionHead id="profile" n="01" name={t.ads.profileName} lead={t.ads.profileLead} />
       <div className="mx-auto mt-8 grid max-w-4xl gap-4 md:grid-cols-2">
-        <div className="card flex flex-col p-6">
+        <div className="reveal card lift flex flex-col p-6">
           <div className="flex items-center justify-between">
             <span className="eyebrow rounded-full bg-panel-3 px-3 py-1">{t.ads.freeProfile}</span>
             <span className="h-display text-3xl text-faint">$0</span>
@@ -127,7 +127,7 @@ function ProfileSection({ tiers, onPick }: { tiers: Tier[]; onPick: (t: Tier) =>
           </div>
         </div>
         {elite && (
-          <div className="card flex flex-col border-storm/40 bg-[linear-gradient(160deg,rgb(91_140_255/0.12),transparent_60%)] p-6">
+          <div className="reveal card lift flex flex-col border-storm/40 bg-[linear-gradient(160deg,rgb(91_140_255/0.12),transparent_60%)] p-6">
             <div className="flex items-center justify-between">
               <span className="eyebrow rounded-full bg-storm/20 px-3 py-1 text-storm-2">{t.ads.eliteProfile}</span>
               <span className="text-right"><span className="h-display text-3xl">{money(elite.priceUsd)}</span><span className="block text-xs text-muted">{t.common.perUpdate}</span></span>
@@ -192,7 +192,7 @@ function TrendTierCard({ tier, sale, onPick }: { tier: Tier; sale: boolean; onPi
   const popular = lvl === 3;
   const off = sale && tier.compareAtUsd ? Math.round((1 - tier.priceUsd / tier.compareAtUsd) * 100) : 0;
   return (
-    <div className={`card relative flex flex-col p-5 ${popular ? "border-storm/60 bg-[linear-gradient(170deg,rgb(91_140_255/0.14),transparent_55%)]" : ""} ${hasEliteFrame(lvl) ? "border-volt/50" : ""}`}>
+    <div className={`reveal card lift relative flex flex-col p-5 ${popular ? "border-storm/60 bg-[linear-gradient(170deg,rgb(91_140_255/0.14),transparent_55%)]" : ""} ${hasEliteFrame(lvl) ? "border-volt/50" : ""}`}>
       {popular && (
         <span className="eyebrow absolute -top-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-storm px-3 py-1 text-white">
           <Star size={11} /> {t.ads.mostPopular}
@@ -239,7 +239,7 @@ function BannerSection({ tiers, onPick }: { tiers: Tier[]; onPick: (t: Tier) => 
     <section className="container-x mt-24">
       <SectionHead id="banner" n="03" name={t.ads.bannerName} lead={t.ads.bannerLead} />
       <div className="mx-auto mt-8 max-w-4xl">
-        <div className="flex aspect-[3/1] items-center justify-center rounded-2xl border border-dashed border-volt/40 bg-[linear-gradient(120deg,rgb(255_210_63/0.08),rgb(91_140_255/0.10))] text-center">
+        <div className="reveal flex aspect-[3/1] items-center justify-center rounded-2xl border border-dashed border-volt/40 bg-[linear-gradient(120deg,rgb(255_210_63/0.08),rgb(91_140_255/0.10))] text-center">
           <div>
             <p className="h-display num text-2xl sm:text-4xl">{BANNER_SPEC.width} × {BANNER_SPEC.height}</p>
             <p className="mt-2 text-sm text-muted">{fmt(t.ads.bannerSpec, { w: BANNER_SPEC.width, h: BANNER_SPEC.height, formats: BANNER_SPEC.formats, mb: BANNER_SPEC.maxMb })}</p>
@@ -254,7 +254,7 @@ function BannerSection({ tiers, onPick }: { tiers: Tier[]; onPick: (t: Tier) => 
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {tiers.map((tier) => (
-              <div key={tier.code} className="card flex flex-col p-5">
+              <div key={tier.code} className="reveal card lift flex flex-col p-5">
                 <p className="eyebrow">{t.ads.bannerTiers[tier.code as keyof typeof t.ads.bannerTiers]}</p>
                 <p className="h-display mt-2 text-3xl">{money(tier.priceUsd)}</p>
                 <button className="btn-ghost mt-auto w-full pt-2.5" style={{ marginTop: 20 }} onClick={() => onPick(tier)}>{t.ads.getStarted}</button>

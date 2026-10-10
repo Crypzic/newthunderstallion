@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usd } from "@/lib/format";
@@ -16,19 +17,32 @@ export function HomeHero() {
   const { t } = useI18n();
   const { open } = useUi();
   return (
-    <section className="container-x pb-6 pt-8 sm:pt-12">
-      <span className="eyebrow inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1.5">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-up" /> {t.home.kicker}
-      </span>
-      <h1 className="h-display mt-4 text-[clamp(30px,5.4vw,60px)] leading-[1.05]">
-        {t.home.h1a}<br /><span className="text-volt">{t.home.h1b}</span>
-      </h1>
-      <p className="mt-4 max-w-xl text-base text-muted sm:text-lg">{t.home.lead}</p>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <button onClick={() => open("search")} className="btn-ghost w-full justify-start text-muted sm:w-96">
-          <Search size={16} /> <span className="truncate text-sm font-medium">{t.nav.search}</span>
-        </button>
-        <Link href="/advertising" className="btn-primary"><Bolt filled size={16} /> {t.board.boostCta}</Link>
+    <section className="container-x grid items-center gap-10 pb-8 pt-8 sm:pt-12 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="min-w-0">
+        <span className="enter eyebrow inline-flex items-center gap-2 rounded-full border border-line bg-panel/80 px-3 py-1.5">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-up" /> {t.home.kicker}
+        </span>
+        <h1 className="enter h-display mt-5 text-[clamp(32px,5.6vw,64px)] leading-[1.03]" style={{ "--d": "80ms" } as React.CSSProperties}>
+          {t.home.h1a}<br /><span className="ticker-gold">{t.home.h1b}</span>
+        </h1>
+        <p className="enter mt-5 max-w-xl text-base text-muted sm:text-lg" style={{ "--d": "160ms" } as React.CSSProperties}>{t.home.lead}</p>
+        <div className="enter mt-7 flex flex-wrap gap-3" style={{ "--d": "240ms" } as React.CSSProperties}>
+          <button onClick={() => open("search")} className="btn-ghost w-full justify-start text-muted sm:w-96">
+            <Search size={16} /> <span className="truncate text-sm font-medium">{t.nav.search}</span>
+          </button>
+          <Link href="/advertising" className="btn-primary"><Bolt filled size={16} /> {t.board.boostCta}</Link>
+        </div>
+        <ul className="enter mt-7 flex flex-wrap gap-2 text-xs text-muted" style={{ "--d": "320ms" } as React.CSSProperties}>
+          {[t.home.chipChains, t.home.chipLive, t.home.chipVotes].map((c) => (
+            <li key={c} className="flex items-center gap-1.5 rounded-lg border border-line bg-panel/70 px-3 py-1.5"><Bolt filled size={11} className="text-volt" /> {c}</li>
+          ))}
+        </ul>
+      </div>
+      <div className="enter relative mx-auto w-full max-w-[230px] sm:max-w-[340px] lg:max-w-[440px]" style={{ "--d": "200ms" } as React.CSSProperties}>
+        <div className="art-glow" />
+        <div className="art-frame">
+          <Image src="/brand/thunder-stallion.webp" alt="Thunder Stallion" width={880} height={880} priority sizes="(min-width: 1024px) 440px, 360px" />
+        </div>
       </div>
     </section>
   );
@@ -43,7 +57,7 @@ export function EliteSpotlight() {
   if (!frontPage.length) return null;
   const byKey = new Map((coins.data || []).map((c) => [tokenKey(c.chainId, c.address), c]));
   return (
-    <section className="container-x mb-6">
+    <section className="reveal container-x mb-6">
       <div className="grid gap-3 md:grid-cols-2">
         {frontPage.slice(0, 2).map((b) => {
           const c = byKey.get(tokenKey(b.chain, b.address));
@@ -143,8 +157,8 @@ export function BannerCarousel() {
   }
   const cur = i % n;
   return (
-    <section className="container-x mb-6" aria-roledescription="carousel" aria-label={t.home.dexTrending}>
-      <div className="relative overflow-hidden rounded-2xl border border-line">
+    <section className="reveal container-x mb-6" aria-roledescription="carousel" aria-label={t.home.dexTrending}>
+      <div className="relative overflow-hidden rounded-2xl border border-line shadow-[0_30px_80px_-50px_rgb(255_210_63/0.5)]">
         <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${cur * 100}%)` }}>
           {slides.map((s, idx) => <BannerSlide key={s.key} s={s} eager={idx === 0} />)}
         </div>
@@ -208,7 +222,7 @@ export function HotSpot() {
   const coins = useAsync(() => market.tokens(keys), [keys.join(",")]);
   const byKey = new Map((coins.data || []).map((c) => [tokenKey(c.chainId, c.address), c]));
   return (
-    <section className="card p-4 sm:p-5">
+    <section className="reveal card p-4 sm:p-5">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
           <h2 className="h-display flex items-center gap-2 text-lg"><Flame size={18} className="text-down" /> {t.home.hotspot}</h2>
@@ -244,7 +258,7 @@ export function LatestListings() {
   const { t } = useI18n();
   const data = useAsync(() => getStore().approvedListings(8), []);
   return (
-    <section className="card p-4 sm:p-5">
+    <section className="reveal card p-4 sm:p-5">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
           <h2 className="h-display text-lg">{t.home.latest}</h2>
@@ -255,7 +269,7 @@ export function LatestListings() {
       {data.loading && !data.data ? <Spinner /> : !data.data?.length ? <Empty>{t.home.latestEmpty}</Empty> : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {data.data.map((l) => (
-            <Link key={l.id} href={coinHref(l.chain, l.contract)} className="flex min-w-0 items-center gap-3 rounded-xl border border-line bg-panel-2/50 p-3 hover:border-line-2">
+            <Link key={l.id} href={coinHref(l.chain, l.contract)} className="lift flex min-w-0 items-center gap-3 rounded-xl border border-line bg-panel-2/50 p-3">
               <TokenAvatar src={l.logoUrl} symbol={l.symbol} chain={l.chain} size={36} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
