@@ -22,6 +22,13 @@ function rng(seed: number) {
   return () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
 }
 
+/** Coloured placeholder logo so sample tokens don't all look the same. */
+function avatar(symbol: string, i: number) {
+  const h = (i * 47) % 360;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h},85%,58%)"/><stop offset="1" stop-color="hsl(${(h + 50) % 360},80%,38%)"/></linearGradient></defs><circle cx="32" cy="32" r="32" fill="url(#g)"/><text x="32" y="41" font-family="Arial,sans-serif" font-size="24" font-weight="700" text-anchor="middle" fill="#fff">${symbol.slice(0, 2)}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 let cache: Coin[] | null = null;
 export function fixtureCoins(): Coin[] {
   if (cache) return cache.map((c) => ({ ...c }));
@@ -44,7 +51,7 @@ export function fixtureCoins(): Coin[] {
       chainId, address, name, symbol,
       pairAddress: `pair${i}`, dexId: chainId === "solana" ? "pumpswap" : "pancakeswap",
       url: "", quoteSymbol: chainId === "solana" ? "SOL" : chainId === "bsc" ? "WBNB" : "WETH",
-      image: null, header: null,
+      image: avatar(symbol, i), header: null,
       priceUsd: mc / 1e9,
       change: { m5: ch() / 10, h1: ch() / 3, h6: ch(), h24: ch() * 1.5 },
       volume: { m5: Math.round(v24 / 200), h1: Math.round(v24 / 20), h6: Math.round(v24 / 4), h24: v24 },
