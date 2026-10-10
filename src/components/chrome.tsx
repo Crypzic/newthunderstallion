@@ -11,7 +11,7 @@ import type { Coin } from "@/lib/market/types";
 import { getStore, useAuth } from "@/lib/store";
 import { age, price, usd } from "@/lib/format";
 import { coinHref } from "./links";
-import { Bolt, Close, Coins, Crosshair, Megaphone, Menu, Plus, Search, Shield, Telegram, User, Wallet } from "./icons";
+import { Bolt, Close, Coins, Crosshair, Megaphone, Menu, Plus, Search, Shield, Telegram, User, Wallet, Sun, Moon } from "./icons";
 import { ChainBadge, Modal, Pct, TokenAvatar } from "./primitives";
 import { useUi } from "./ui-state";
 
@@ -29,7 +29,7 @@ function useNav() {
 export function Logo() {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap" aria-label={SITE.name}>
-      <Image src="/brand/logo-64.png" alt="" width={36} height={36} className="rounded-xl ring-1 ring-volt/40 shadow-[0_0_18px_rgb(255_210_63/0.35)]" priority />
+      <Image src="/brand/logo-128.png" alt="" width={48} height={48} className="rounded-lg ring-1 ring-volt/40 shadow-[0_0_18px_rgb(255_210_63/0.35)]" priority />
       <span className="h-display text-[15px] leading-none">
         THUNDER<span className="text-volt">STALLION</span>
       </span>
@@ -52,6 +52,26 @@ export function LangToggle() {
         </button>
       ))}
     </div>
+  );
+}
+
+export function ThemeToggle() {
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the theme the head script applied
+    setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  }, []);
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    if (next === "light") document.documentElement.dataset.theme = "light";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ts-theme", next); } catch {}
+  };
+  return (
+    <button className="btn-ghost p-2.5" onClick={toggle} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={theme === "dark" ? "Light mode" : "Dark mode"}>
+      {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+    </button>
   );
 }
 
@@ -160,6 +180,7 @@ export function Navbar() {
           </button>
           <button className="btn-ghost p-2.5 lg:hidden" onClick={() => open("search")} aria-label={t.nav.search}><Search size={16} /></button>
           <div className="hidden sm:block"><LangToggle /></div>
+          <div className="hidden sm:block"><ThemeToggle /></div>
           <button className="btn-ghost hidden whitespace-nowrap sm:flex" onClick={() => open("wallet")} aria-label={t.nav.connect}>
             <Wallet size={16} /> <span className="sm:inline lg:hidden 2xl:inline">{t.nav.connect}</span>
           </button>
@@ -188,7 +209,7 @@ export function Navbar() {
             </div>
             <div className="flex items-center justify-between">
               <p className="eyebrow">{t.nav.language}</p>
-              <LangToggle />
+              <div className="flex items-center gap-2"><LangToggle /><ThemeToggle /></div>
             </div>
             <div className="flex flex-col gap-2">
               <button className="btn-ghost w-full border-storm/40 bg-storm/10" onClick={() => { setDrawer(false); open("wallet"); }}>

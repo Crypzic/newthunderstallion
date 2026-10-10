@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usd } from "@/lib/format";
@@ -17,12 +16,12 @@ export function HomeHero() {
   const { t } = useI18n();
   const { open } = useUi();
   return (
-    <section className="container-x grid items-center gap-10 pb-8 pt-8 sm:pt-12 lg:grid-cols-[1.15fr_0.85fr]">
-      <div className="min-w-0">
+    <section className="container-x pb-8 pt-10 sm:pt-16">
+      <div className="min-w-0 max-w-3xl">
         <span className="enter eyebrow inline-flex items-center gap-2 rounded-full border border-line bg-panel/80 px-3 py-1.5">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-up" /> {t.home.kicker}
         </span>
-        <h1 className="enter h-display mt-5 text-[clamp(32px,5.6vw,64px)] leading-[1.03]" style={{ "--d": "80ms" } as React.CSSProperties}>
+        <h1 className="enter h-display mt-5 text-[clamp(34px,6.4vw,76px)] leading-[1.02]" style={{ "--d": "80ms" } as React.CSSProperties}>
           {t.home.h1a}<br /><span className="ticker-gold">{t.home.h1b}</span>
         </h1>
         <p className="enter mt-5 max-w-xl text-base text-muted sm:text-lg" style={{ "--d": "160ms" } as React.CSSProperties}>{t.home.lead}</p>
@@ -37,12 +36,6 @@ export function HomeHero() {
             <li key={c} className="flex items-center gap-1.5 rounded-lg border border-line bg-panel/70 px-3 py-1.5"><Bolt filled size={11} className="text-volt" /> {c}</li>
           ))}
         </ul>
-      </div>
-      <div className="enter relative mx-auto w-full max-w-[230px] sm:max-w-[340px] lg:max-w-[440px]" style={{ "--d": "200ms" } as React.CSSProperties}>
-        <div className="art-glow" />
-        <div className="art-frame">
-          <Image src="/brand/thunder-stallion.webp" alt="Thunder Stallion" width={880} height={880} priority sizes="(min-width: 1024px) 440px, 360px" />
-        </div>
       </div>
     </section>
   );
@@ -179,8 +172,8 @@ function BannerSlide({ s, eager }: { s: Slide; eager: boolean }) {
   const { t } = useI18n();
   const tag =
     s.kind === "dex" ? <span className="pill bg-black/60 text-storm-2">{t.home.dexTrending}</span>
-    : s.kind === "promoted" ? <span className="pill bg-black/60 text-volt">{t.home.promoted}</span>
-    : <span className="pill-volt bg-black/60"><Bolt filled size={11} /> {t.home.boostedTag} · {s.points.toLocaleString()}</span>;
+    : s.kind === "promoted" ? <span className="pill on-dark bg-black/60 text-volt">{t.home.promoted}</span>
+    : <span className="pill-volt on-dark bg-black/60"><Bolt filled size={11} /> {t.home.boostedTag} · {s.points.toLocaleString()}</span>;
   const info = (
     <span className="flex items-center gap-3">
       <TokenAvatar src={s.coin?.image} symbol={s.symbol} chain={s.chain} size={40} />
