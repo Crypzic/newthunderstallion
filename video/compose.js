@@ -3,7 +3,10 @@
    URL params: set=desktop|mobile, w, h, base=<assets folder URL>. Targets come from window.TARGETS. */
 
 const Q = new URLSearchParams(location.search);
-const W = +(Q.get("w") || 1920), H = +(Q.get("h") || 1080);
+const OW = +(Q.get("w") || 1920), OH = +(Q.get("h") || 1080); // output frame
+const FRAME = Q.get("frame") === "iphone"; // play the scenes on an iPhone 12 Pro screen
+// iPhone 12 Pro screen is 390x844pt; at 2x it is 780x1688 inside a 1080x1920 frame
+const W = FRAME ? 780 : OW, H = FRAME ? 1688 : OH;
 const SET = Q.get("set") || "desktop";
 const BASE = Q.get("base") || `assets/${SET}/`;
 const P = H > W; // portrait
@@ -14,6 +17,52 @@ const DURATION = 60;
 const stage = document.getElementById("stage");
 stage.style.width = W + "px";
 stage.style.height = H + "px";
+
+/* ───────── iPhone 12 Pro frame (frame=iphone) ───────── */
+const outer = {};
+if (FRAME) {
+  const canvas = document.createElement("div"); canvas.id = "canvas";
+  canvas.style.cssText = `position:relative;width:${OW}px;height:${OH}px;overflow:hidden;background:#07080c;perspective:2400px`;
+  document.body.insertBefore(canvas, stage);
+  outer.bg = document.createElement("div"); outer.bg.className = "layer"; canvas.appendChild(outer.bg);
+  outer.grid = document.createElement("div"); outer.grid.className = "abs"; outer.grid.id = "grid"; outer.bg.appendChild(outer.grid);
+  outer.glow = document.createElement("div"); outer.glow.className = "abs";
+  outer.glow.style.cssText = "inset:0;background:radial-gradient(42% 30% at 50% 50%, rgb(255 210 63 / .28), transparent 70%), radial-gradient(60% 40% at 50% 100%, rgb(91 140 255 / .18), transparent 70%)";
+  outer.bg.appendChild(outer.glow);
+  const mask = document.createElement("div"); mask.className = "abs"; mask.style.cssText = "inset:0;background:radial-gradient(90% 60% at 50% 50%, transparent 30%, #07080c 90%)"; outer.bg.appendChild(mask);
+  const BZ = 22; // bezel
+  const dev = document.createElement("div"); dev.className = "abs device";
+  dev.style.cssText = `width:${W + BZ * 2}px;height:${H + BZ * 2}px;border-radius:${95 + BZ}px;background:#050505;` +
+    "box-shadow:0 0 0 7px #4a4c50, 0 0 0 9px #25262a, 0 0 0 10px #6b6d72, 0 60px 140px -30px rgb(0 0 0 / .9), 0 0 120px 10px rgb(255 210 63 / .18);";
+  canvas.appendChild(dev);
+  // side buttons: silent switch + volume (left), power (right)
+  for (const [side, top, h] of [["left", 250, 70], ["left", 360, 130], ["left", 520, 130], ["right", 420, 200]]) {
+    const b = document.createElement("div"); b.className = "abs";
+    b.style.cssText = `width:9px;height:${h}px;top:${top}px;${side}:-17px;left:${side === "left" ? -17 : W + BZ * 2 + 8}px;border-radius:4px;background:linear-gradient(90deg,#2b2c30,#6b6d72,#2b2c30)`;
+    dev.appendChild(b);
+  }
+  const screen = document.createElement("div"); screen.className = "abs";
+  screen.style.cssText = `left:${BZ}px;top:${BZ}px;width:${W}px;height:${H}px;border-radius:95px;overflow:hidden;background:#07080c;isolation:isolate`;
+  dev.appendChild(screen);
+  screen.appendChild(stage);
+  // notch
+  const notch = document.createElement("div"); notch.className = "abs";
+  notch.style.cssText = `left:${(W - 330) / 2}px;top:-2px;width:330px;height:64px;background:#050505;border-radius:0 0 38px 38px;z-index:50`;
+  screen.appendChild(notch);
+  const cam = document.createElement("div"); cam.className = "abs"; cam.style.cssText = `left:${W / 2 + 70}px;top:18px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#1d2a4a,#050505 60%);z-index:51`; screen.appendChild(cam);
+  const spk = document.createElement("div"); spk.className = "abs"; spk.style.cssText = `left:${W / 2 - 50}px;top:12px;width:100px;height:9px;border-radius:5px;background:#1a1a1c;z-index:51`; screen.appendChild(spk);
+  // iOS status bar
+  const sb = document.createElement("div"); sb.className = "abs";
+  sb.style.cssText = `left:0;top:0;width:${W}px;height:92px;z-index:49;color:#fff;font:600 32px -apple-system,"SF Pro Text","Inter",system-ui,sans-serif;background:linear-gradient(#07080c,rgba(7,8,12,0))`;
+  sb.innerHTML = `<span style="position:absolute;left:78px;top:24px;letter-spacing:.5px">9:41</span>
+    <svg style="position:absolute;right:150px;top:30px" width="36" height="24" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#fff"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#fff"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#fff"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#fff"/></svg>
+    <svg style="position:absolute;right:104px;top:29px" width="34" height="26" viewBox="0 0 17 13"><path d="M8.5 12.5 L5.6 9.3 A4.2 4.2 0 0 1 11.4 9.3 Z M8.5 3.5 A8.8 8.8 0 0 1 14.7 6 L13.1 7.7 A6.6 6.6 0 0 0 3.9 7.7 L2.3 6 A8.8 8.8 0 0 1 8.5 3.5 Z M8.5 0 A12.6 12.6 0 0 1 17 3.4 L15.4 5 A10.4 10.4 0 0 0 1.6 5 L0 3.4 A12.6 12.6 0 0 1 8.5 0 Z" fill="#fff"/></svg>
+    <svg style="position:absolute;right:44px;top:28px" width="52" height="26" viewBox="0 0 26 13"><rect x=".5" y=".5" width="22" height="12" rx="3.5" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="2" y="2" width="17" height="9" rx="2" fill="#fff"/><rect x="23.5" y="4" width="2" height="5" rx="1" fill="#fff" fill-opacity=".5"/></svg>`;
+  screen.appendChild(sb);
+  // home indicator
+  const hi = document.createElement("div"); hi.className = "abs"; hi.style.cssText = `left:${(W - 270) / 2}px;top:${H - 22}px;width:270px;height:10px;border-radius:5px;background:rgb(255 255 255 / .85);z-index:49`; screen.appendChild(hi);
+  outer.dev = dev; outer.canvas = canvas; outer.BZ = BZ;
+}
 
 /* ───────── helpers ───────── */
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -104,6 +153,27 @@ const boltEls = BOLTS.map((b) => {
   return { svg, paths };
 });
 const flash = el("div", "abs", stage); flash.id = "flash";
+const outerBolts = [];
+if (FRAME) {
+  const OB = [
+    { b: BOLTS[0], x: 0.80, y: -0.02, h: 0.42 }, { b: BOLTS[1], x: 0.02, y: 0.05, h: 0.36 }, { b: BOLTS[2], x: 0.86, y: 0.56, h: 0.3 },
+  ];
+  for (const o of OB) {
+    const [, , vw, vh] = o.b.view.split(" ").map(Number);
+    const hpx = o.h * OH, wpx = (hpx * vw) / vh;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", o.b.view); svg.setAttribute("class", `bolt abs${o.b.blue ? " blue" : ""}`);
+    svg.style.width = wpx + "px"; svg.style.height = hpx + "px";
+    svg.style.transform = `translate(${o.x * OW}px, ${o.y * OH}px)`;
+    const paths = [];
+    for (const cls of ["glow", "core"]) for (const d of o.b.d) {
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", d); p.setAttribute("class", cls); svg.appendChild(p); paths.push(p);
+    }
+    outer.bg.appendChild(svg);
+    outerBolts.push({ svg, paths });
+  }
+}
 
 // [time, boltIndex]
 const STRIKES = [[0.3, 0], [0.95, 1], [1.6, 2], [3.95, 0], [10.0, 1], [18.0, 2], [24.0, 0], [30.0, 1], [36.4, 2], [46.0, 0], [51.4, 2], [53.1, 0], [53.25, 1], [54.3, 1], [55.0, 2], [55.6, 0], [57.6, 1]];
@@ -119,7 +189,8 @@ function renderBackdrop(t) {
   grid.style.transform = `translate3d(${-(t * 12) % 56}px, ${-(t * 18) % 56}px, 0)`;
   floor.style.backgroundPosition = `0 ${(t * 22) % 64}px`;
   let fl = 0;
-  boltEls.forEach((b, i) => {
+  [...boltEls, ...outerBolts].forEach((b, j) => {
+    const i = j % boltEls.length;
     let lvl = 0, draw = 0;
     for (const [ts, bi] of STRIKES) if (bi === i) { const age = t - ts; const l = strikeLevel(age); if (l > lvl) { lvl = l; draw = prog(age, 0, 0.12); } }
     b.svg.style.opacity = lvl;
@@ -127,6 +198,15 @@ function renderBackdrop(t) {
     fl = Math.max(fl, lvl);
   });
   flash.style.opacity = fl * 0.9;
+  if (FRAME) {
+    outer.grid.style.transform = `translate3d(${-(t * 10) % 56}px, ${-(t * 16) % 56}px, 0)`;
+    outer.glow.style.opacity = 0.75 + 0.25 * Math.sin(t * 1.2) + fl * 0.6;
+    // phone floats gently and tilts a little
+    const x = (OW - (W + outer.BZ * 2)) / 2, y = (OH - (H + outer.BZ * 2)) / 2;
+    const intro = E.out(prog(t, 0, 1.2));
+    outer.dev.style.transform = `translate3d(${x}px, ${y + Math.sin(t * 0.8) * 8 + (1 - intro) * 120}px, 0) rotateX(${Math.sin(t * 0.5) * 2 + (1 - intro) * 18}deg) rotateY(${Math.sin(t * 0.37) * 3}deg) scale(${lerp(0.92, 1, intro)})`;
+    outer.dev.style.opacity = intro;
+  }
 }
 
 /* ───────── scene containers ───────── */
@@ -142,6 +222,7 @@ function scene(t0, t1, build) {
 const cursor = el("div", "abs"); cursor.id = "cursor";
 cursor.innerHTML = '<svg viewBox="0 0 24 24" width="34" height="34"><path d="M3 2 L3 20 L8 15 L11.5 22 L14.5 20.6 L11 13.8 L18 13.8 Z" fill="#fff" stroke="#07080c" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 const ripples = [el("div", "abs ripple"), el("div", "abs ripple")];
+if (FRAME) cursor.innerHTML = '<div style="width:64px;height:64px;margin:-18px 0 0 -26px;border-radius:50%;background:rgb(255 255 255 / .28);border:3px solid rgb(255 255 255 / .85);box-shadow:0 0 20px rgb(0 0 0 / .4)"></div>';
 let cur = null; const clicks = [];
 
 /* ───────── layout sizes ───────── */
@@ -290,9 +371,10 @@ const R = {
   },
   submit(s, t) {
     const z = sz(s.a), zf = sz(s.b);
-    const base = P ? fitS(z, W * 0.9, H * 2) : fitS(z, W * 0.6, H * 2);
+    const base = P ? fitS(z, W * 0.86, H * 2) : fitS(z, W * 0.6, H * 2);
     // camera: start on the contract field, then pull back down the filled form
-    const zoom = kf(t, [[24, 1.25], [26.2, 1.25], [28.2, 1]]);
+    const zi = P ? 1.08 : 1.25; // a narrow phone screen can't take as much zoom
+    const zoom = kf(t, [[24, zi], [26.2, zi], [28.2, P ? 0.98 : 1]]);
     const focusY = kf(t, [[24, 0.12], [26.2, 0.12], [30.2, 0.62]]);
     const s1 = base * zoom;
     const cy = H / 2 - (focusY - 0.5) * z.h * s1;
@@ -457,6 +539,7 @@ function render(t) {
   // press-in on the cursor at click time
   if (cur) for (const c of clicks) if (t >= c.t && t < c.t + 0.15) cursor.style.transform += " scale(0.85)";
   fade.style.opacity = prog(t, 59.0, 60);
+  if (FRAME) outer.canvas.style.opacity = 1 - prog(t, 59.0, 60);
 }
 
 window.DURATION = DURATION;

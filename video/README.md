@@ -14,7 +14,7 @@ node video/capture.mjs http://localhost:3100 video/assets/mobile mobile
 
 # 3. render (needs ffmpeg). --preview t1,t2 writes stills instead of a video
 node video/render.mjs video/assets/desktop desktop video/out/explainer-16x9.mp4
-node video/render.mjs video/assets/mobile mobile video/out/explainer-9x16.mp4
+node video/render.mjs video/assets/mobile iphone video/out/explainer-iphone-9x16.mp4   # on an iPhone 12 Pro
 ```
 
 - `compose.html` / `compose.js` — the timeline. Every frame is `render(t)`, so renders are exact.

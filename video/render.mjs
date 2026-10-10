@@ -1,29 +1,30 @@
 // Renders video/compose.html frame by frame into an MP4 with ffmpeg.
 // Usage:
-//   node video/render.mjs <assetsDir> <desktop|mobile> <out.mp4> [--preview t1,t2,...]
-// desktop → 1920x1080 (16:9), mobile → 1080x1920 (9:16). 30 fps, silent (voiceover is added in editing).
+//   node video/render.mjs <assetsDir> <desktop|mobile|iphone> <out.mp4> [--preview t1,t2,...]
+// desktop → 1920x1080, mobile → 1080x1920, iphone → mobile UI on an iPhone 12 Pro in a 1080x1920 frame. 30 fps, silent.
 import { spawn } from "node:child_process";
-import { copyFileSync, existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const [assetsDir, set = "desktop", out = "out.mp4", flag, list] = process.argv.slice(2);
-const [W, H] = set === "mobile" ? [1080, 1920] : [1920, 1080];
+// iphone = mobile captures played on an iPhone 12 Pro inside a 1080x1920 frame
+const frame = set === "iphone" ? "iphone" : "";
+const capSet = set === "iphone" ? "mobile" : set;
+const [W, H] = set === "desktop" ? [1920, 1080] : [1080, 1920];
 const FPS = 30;
 
 const assets = resolve(assetsDir);
-const logo = resolve(here, "../public/brand/og.jpg");
 if (!existsSync(`${assets}/logo.jpg`)) throw new Error(`Put the square logo at ${assets}/logo.jpg`);
-void logo; void copyFileSync;
 const targets = JSON.parse(readFileSync(`${assets}/targets.json`, "utf8"));
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ["--allow-file-access-from-files"] });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 await page.addInitScript((t) => { window.TARGETS = t; }, targets);
 page.on("pageerror", (e) => console.error("pageerror:", e.message));
-const url = `${pathToFileURL(resolve(here, "compose.html")).href}?set=${set}&w=${W}&h=${H}&base=${encodeURIComponent(pathToFileURL(assets).href + "/")}`;
+const url = `${pathToFileURL(resolve(here, "compose.html")).href}?set=${capSet}&frame=${frame}&w=${W}&h=${H}&base=${encodeURIComponent(pathToFileURL(assets).href + "/")}`;
 await page.goto(url);
 await page.waitForFunction(() => window.READY === true, null, { timeout: 30000 });
 const duration = await page.evaluate(() => window.DURATION);
