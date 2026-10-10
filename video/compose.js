@@ -499,7 +499,7 @@ const R = {
     s.win.style.width = winW + "px"; s.win.style.height = winH + "px";
     put(s.win, { w: winW, h: winH, s: lerp(0.92, 1, enter) });
     // rows shift down one slot while the new token flies up into #1
-    const p = E.back(prog(t, 52.5, 53.1));
+    const p = E.out(prog(t, 52.5, 53.1));
     for (const e of [s.before, s.after]) e.style.transformOrigin = "0 0";
     s.before.style.transform = `translate3d(0, ${(-top + rowH * p) * sc}px, 0) scale(${sc})`;
     const done = prog(t, 53.1, 53.25);
