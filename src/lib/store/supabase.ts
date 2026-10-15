@@ -38,7 +38,16 @@ const toTier = (r: Row): Tier => ({
   points: r.points, durationHours: r.duration_hours, sort: r.sort, active: r.active,
 });
 
-const emailFor = (username: string) => `${username.toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
+// Accounts sign in with a username; Supabase needs an email, so each username maps to a fixed hidden one.
+// Plain usernames (letters, numbers, _) keep the original mapping so existing accounts still log in;
+// anything else (spaces, Chinese, dots…) maps to a hash of the lowercased name.
+async function emailFor(username: string) {
+  const name = username.toLowerCase();
+  if (/^[a-z0-9_]+$/.test(name)) return `${name}@${AUTH_EMAIL_DOMAIN}`;
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(name));
+  const hex = Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, "0")).join("");
+  return `u-${hex.slice(0, 40)}@${AUTH_EMAIL_DOMAIN}`;
+}
 
 function clientId() {
   try {
@@ -85,13 +94,17 @@ export function createSupabaseStore(): Store {
     async signUp(username, password, telegram) {
       const { data: free } = await sb.rpc("username_available", { p_username: username });
       if (free === false) throw new StoreError("USERNAME_TAKEN");
-      const { data, error } = await sb.auth.signUp({ email: emailFor(username), password, options: { data: { username, telegram } } });
-      if (error) throw new StoreError(/registered|exists/i.test(error.message) ? "USERNAME_TAKEN" : "SERVER", error.message);
+      const { data, error } = await sb.auth.signUp({ email: await emailFor(username), password, options: { data: { username, telegram } } });
+      if (error) {
+        if (/registered|exists/i.test(error.message)) throw new StoreError("USERNAME_TAKEN");
+        if (/password/i.test(error.message)) throw new StoreError("WEAK_PASSWORD", error.message);
+        throw new StoreError("SERVER", error.message);
+      }
       if (!data.session) throw new StoreError("SERVER", "Turn off “Confirm email” in Supabase → Authentication → Providers → Email.");
       return (await sessionFor(data.user?.id))!;
     },
     async signIn(username, password) {
-      const { data, error } = await sb.auth.signInWithPassword({ email: emailFor(username), password });
+      const { data, error } = await sb.auth.signInWithPassword({ email: await emailFor(username), password });
       if (error || !data.user) throw new StoreError("INVALID_LOGIN");
       return (await sessionFor(data.user.id))!;
     },

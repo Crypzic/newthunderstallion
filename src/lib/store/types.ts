@@ -124,7 +124,7 @@ export interface Store {
 }
 
 export class StoreError extends Error {
-  constructor(public code: "AUTH_REQUIRED" | "USERNAME_TAKEN" | "INVALID_LOGIN" | "DUPLICATE" | "FORBIDDEN" | "BAD_INPUT" | "SERVER", message?: string) {
+  constructor(public code: "AUTH_REQUIRED" | "USERNAME_TAKEN" | "INVALID_LOGIN" | "DUPLICATE" | "FORBIDDEN" | "BAD_INPUT" | "WEAK_PASSWORD" | "SERVER", message?: string) {
     super(message || code);
   }
 }

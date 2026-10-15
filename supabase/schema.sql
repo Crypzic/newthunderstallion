@@ -14,6 +14,10 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 create unique index if not exists profiles_username_key on public.profiles (lower(username));
+-- Usernames: 3–20 letters (any language), numbers, spaces, _ . -  (the sign-up form checks the same rule)
+alter table public.profiles drop constraint if exists profiles_username_check;
+alter table public.profiles add constraint profiles_username_check
+  check (char_length(username) between 3 and 20 and username = btrim(username) and username !~ '[@[:cntrl:]]');
 
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
