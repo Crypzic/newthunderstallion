@@ -53,6 +53,13 @@ create index if not exists listings_user on public.listings (user_id);
 create or replace function public.listings_guard() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  -- a signed-in submitter (admins included) always owns what they submit, so it shows under "My listings"
+  if tg_op = 'INSERT' and auth.uid() is not null then
+    new.user_id := coalesce(new.user_id, auth.uid());
+    if coalesce(new.username, '') = '' then
+      new.username := coalesce((select username from public.profiles where id = new.user_id), '');
+    end if;
+  end if;
   if tg_op = 'INSERT' and auth.uid() is not null and not public.is_admin() then
     new.user_id := auth.uid();
     new.username := coalesce((select username from public.profiles where id = auth.uid()), '');
@@ -138,15 +145,25 @@ create or replace function public.orders_guard() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare t public.tiers;
 begin
-  if auth.uid() is not null and not public.is_admin() then
+  if auth.uid() is not null and not public.is_admin() and new.pay_token = 'ADMIN' then
+    raise exception 'Invalid payment token';
+  end if;
+  -- Every paid order (admins' test orders included) is priced from the tiers table.
+  -- Free admin boosts (pay_token ADMIN, from admin_add_trending) are already filled in.
+  if auth.uid() is not null and new.pay_token <> 'ADMIN' then
     select * into t from public.tiers where code = new.tier_code and product = new.product and active;
     if not found then raise exception 'Unknown package %', new.tier_code; end if;
-    if new.pay_token = 'ADMIN' then raise exception 'Invalid payment token'; end if;
-    new.user_id := auth.uid();
-    new.username := coalesce((select username from public.profiles where id = auth.uid()), '');
+    new.user_id := coalesce(new.user_id, auth.uid());
+    if coalesce(new.username, '') = '' then
+      new.username := coalesce((select username from public.profiles where id = new.user_id), '');
+    end if;
     new.amount_usd := t.price_usd;
     new.points := t.points;
     new.duration_hours := t.duration_hours;
+  end if;
+  if auth.uid() is not null and not public.is_admin() then
+    new.user_id := auth.uid();
+    new.username := coalesce((select username from public.profiles where id = auth.uid()), '');
     new.status := 'awaiting_payment';
     new.tx_hash := '';
     new.starts_at := null;
@@ -154,6 +171,11 @@ begin
   end if;
   return new;
 end $$;
+-- Repair orders that admins placed before admins' orders were priced (showed $0 and no points).
+update public.orders o set amount_usd = t.price_usd, points = t.points, duration_hours = t.duration_hours,
+  ends_at = case when o.status = 'active' and t.duration_hours is not null then coalesce(o.starts_at, now()) + make_interval(hours => t.duration_hours) else o.ends_at end
+from public.tiers t
+where t.code = o.tier_code and o.pay_token <> 'ADMIN' and o.amount_usd = 0;
 drop trigger if exists orders_guard on public.orders;
 create trigger orders_guard before insert on public.orders
   for each row execute function public.orders_guard();
